@@ -91,6 +91,427 @@ WindowsからLinuxまで広い範囲のOSが提供されていそう
 　　⇒GCE/Cloud SQL/Cloud Strageを使用してみる
 
 
+・GCEを使用したアプリケーション実行環境の構築(Iaas)
+　Comute Engine⇒VMインスタンス⇒作成
+　設定の詳細は別紙「GCP_sample1_webserver.xlsx」
+　各設定の内容
+　　ラベル…インスタンスの共通する機能を持つもの同士をグループとしてくくれる
+　　　　　　FWのルール指定の際に、このラベルで指定ができる。また、インスタンス上で動く
+　　　　　　アプリケーションに対するメタデータとしても使用できる。
+
+　　メタデータ…インスタンスやプロジェクトにカスタムメタデータを設定しておくと
+　　　　　　　　インスタンスのアプリケーションから参照できる
+　　　　　　　　キーと値の組で登場する。
+
+　　自動再起動…ハードウェア障害やソフトウェア障害でユーザの操作以外で仮想マシンインスタンス
+　　　　　　　　終了した場合に、自動で再起動するか
+
+　　ホストメンテナンス…GCEのメンテナンスのときダウンタイムなくマイグレーションするか
+
+　　削除ルール…インスタンスを削除する際にブートディスクを削除するか
+
+　　暗号化…デフォルトでは独自のキーを使用して暗号化を実施する。
+　　　　　　任意のキーを使用する場合にここに指定する。
+
+　　追加ディスク…インスタンスに永続ストレージかローカルSSDストレージを追加する
+
+　　サブネットワーク…指定したサブネットワーク内のIPアドレスを割り当てる
+　　　　　　　　　　　別のサブネットわー区内のインスタンスは同一ネットワークに属していれば
+　　　　　　　　　　　通信可能
+
+　　内部IP…プライベートアドレス。サブネットワーク内から割り当てられる。カスタムで指定も可能
+　　外部IP…グローバルIP。未使用を指定するか、エフェメラルで自動割り当てを行う。エフェメラルは
+　　　　　　インスタンスの起動と停止の度に変わる可能性がある。
+　　　　　　なしを選択すると、外部とはつながらない
+
+　　IP転送…インスタンス上でパケットのルーティングを行う。
+
+　　SSH認証タイプ…デフォルトではSSHでのかぎ認証が有効。ブロックにチェックを入れると
+　　　　　　　　　　無効化可能。
+
+
+　Pythonの環境準備
+　①APTライブラリの更新
+　 sudo apt-get -y update
+
+　②Pythonパッケージのインストール
+　sudo apt-get -y install git python-pip python-dev python-flask python-wtforms python-arrow python-flask-sqlalchemy python-pymysql python-flaskext.wtf
+
+　パッケージの説明
+　　git バージョン管理システム
+　　python-pip パッケージ管理システム
+　　python-dev ヘッダファイルと静的ライブラリ
+　　python-flask Webアプリケーションフレームワーク
+　　python-wtforms form要素のレンダリングやバリデーション
+　　python-arrow 日付処理ライブラリ
+　　python-flask-sqlalchemy 尾fジェクトリレーショナルマッパー
+　　python-pymysql MｙSqlクライアント
+　　python-flaskext.wtf form要素のレンダリング
+
+　③GCPのAPIクライアントライブラリーインストール
+　sudo pip install --upgrade setuptools
+　sudo pip install --upgrade gcloud
+
+ここまでで実行環境準備完了
+
+
+・サンプルアプリのデブロイ
+　①githubからインストール
+
+　git clone https://github.com/asashiho/gcp-compute-engine
+　cd gcp-compute-engine
+　sudo app_v1/install.sh
+
+  ⇒install.shの中身
+    mkdir -p /opt/dengonban/v1
+    pushd $(dirname $0)
+    cp -R ./* /opt/dengonban/v1/
+    cp ./dengonban.service /etc/systemd/system
+    popd
+    chmod 700 /opt/dengonban/v1/app.py
+    systemctl daemon-reload
+
+　②アプリの起動
+  sudo systemctl enable dengonban.service
+  sudo systemctl start dengonban.service
+  sudo systemctl status dengonban.service
+  
+
+・Cloud SQLを使用したデータの管理
+　ストレージ⇒SQL⇒MySql⇒第二世代
+　設定の説明
+　　インスタンスID…先頭小文字。任意の値
+　　データベースのバージョン…そのまま
+　　リージョン…保存データを利用する場所の近くに作る
+　　ゾーン…上記に同じ
+　　マシンタイプ…使用する最大テーブルサイズが収まるマシンタイプを選択
+　　
+
+　Cloud SQLへのアクセスは掲示板アプリからCloud SQL Proxyを介してアクセスする。
+　Cloud SQLクライアントをインストールしたwebサーバからCloud SQLサーバをインストールした
+　サーバのインスタンス接続名を指定することでアクセスできるようになる
+　⇒gcp-sanmple:asia-northeast1:websql
+　
+　Cloud SQL Proxyは内部的にCloud SQL APIを使用するため、先に有効化しておく
+  ⇒現在は最初から有効化されている
+　Cloud ShellからSQLサーバへアクセスする
+　①シェル起動
+　②gcloud sql connect websql --user=root
+　③DBの作成
+    create database message_db;
+    show databases;
+  ④ユーザの作成
+    grant all privileges on message_db.* to appuser@"%" identified by 'pas4appuser' with grant option;
+  ⑤ユーザの確認
+    select user , host from mysql.user;
+
+
+　webサーバへのCloud SQL Proxyのダウンロード
+　  wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64
+    準備コマンド
+      mv cloud_sql_proxy.linux.amd64 cloud_sql_proxy
+      chmod +x cloud_sql_proxy 
+      sudo mkdir /opt/cloudsqlproxy
+      sudo mv cloud_sql_proxy /opt/cloudsqlproxy/
+      sudo mkdir /cloudsql
+      sudo chmod 777 /cloudsql/
+
+・仮想マシンの増設について
+　負荷分散を実現するに当たり、構築した仮想マシンの増築が必要
+　仮想マシンの永続ディスク⇒スナップショット取得⇒新規永続ディスクの作成⇒イメージの作成⇒インスタンスの生成
+
+　①すなっぷしょっとのさくせい
+　　インスタンスを停止⇒スナップショットを作成
+　②新規ディスクの作成
+　　ディスクを選択⇒ディスクを作成⇒ソースにスナップショットを選択⇒作成
+
+　③イメージの作成
+　　イメージ⇒イメージを作成⇒作成した永続ディスクを選択
+　　※現在はsnapshotから直接作れそう！！！
+　　
+　④インスタンステンプレートの作成
+　　インスタンステンプレートを作成⇒ブートディスクをカスタムイメージから選択することが
+　　重要。
+
+　⑤インスタンスグループの作成
+　　インスタンステンプレートから作成したインスタンスのグループを示す。
+
+　インスタンスグループを作成⇒リージョンを指定してインスタンスを複数個作成
+　あっという間にいくつでも冗長化したサーバ構成が作れる。
+　マルチリージョンを選択することが必要。オートスケーリングなどもここで指定する。
+　※放っておくと金かかるから注意！！！
+
+・ロードバランサの作成
+　ネットワークサービス⇒httpの作成⇒バックエンドの設定⇒ホストとパスのルール⇒フロント\エンドの設定
+
+　①バックエンドの設定
+　　SLBの後ろにぶら下げるインスタンスグループを指定する。
+　　ヘルスチェックの設定を行う。
+　②ホストとパスのルール
+　　宛先URLごとにトラフィックを振り分けることができる。
+　　
+　③
+　
+
+
+　
+
+・Cloud DNS
+　ゾーンの作成⇒レコードの登録⇒レジストラへの登録⇒動作確認
+
+・プロジェクトの削除
+　IAMと管理⇒リソースの管理⇒プロジェクト選択⇒プロジェクトID入力⇒削除
+
+・コンテナ構築！！！！
+　やること…DockerとKubernetesを使用して(GKE)五目並べゲームを提供する。
+
+・Docker
+　Linuxコンテナ上で動作するアプリケーションの実行環境構築管理のミドルウェア
+　Dockerでのアプリ開発
+　　①アプリ開発
+　　　開発者はWebアプリのソースをGitなどで保存。
+　　　レポジトリからビルドツールでアプリケーションの実行モジュールをビルドできるように準備をする。
+　　　実行モジュールに加えて、実行に必要なOS/ネットワーク/ストレージなどの構成情報を記載したDocckerfileを作成しGitレポジトリに保存する。
+　
+　　②テスト
+　　　レポジトリからビルドを実行する。
+　　　Dockerfileを用いて、実行モジュールを含んだDockerイメージをビルドする。
+　　　Dockerイメージ⇒インフラ設定とビルド済みの一行モジュールが1つにまとまったインストールイメージのようなもの
+　　　DockerイメージをDockerレジストリに保存して、他メンバーと共有する。
+
+　　③本番へのデプロイ
+　　　テスト済みのDoccerイメージを本番環境へデプロイする。
+
+
+　単体テスト、連結テスト、自動化されたテストなど実施する際はDockerレジストリからDockerイメージをダウンロードして利用する
+　Docerイメージを正しく管理することで本番と開発環境の環境差異をなくすことができる。
+　
+　解決できる課題
+　　①継続的インテグレーション環境での維持管理
+　　　⇒APLのコードを追加/修正するごとにテストを実行して、動作保証する手法のこと
+　　　単体テストの自動化をJenkinsなどで自動化
+　　　
+　　②継続的デリバリーにおけるデプロイの効率化
+　　　本番と開発の各種ライブラリの設定などまるっと含めたイメージを使うことにより、本番と開発の手順が違う。
+　　　なんてことを防ぐ。
+
+　　③Imutable Infrastrctureによる構成管理
+　　　現在のSWや構成はExcelなんかで管理している。⇒本番と台帳の不一致
+　　　Dockerfileによる構成管理のためこいつが管理台帳となる。(本番の環境を直接さわることはしない)
+　　　⇒上記をImutable Infrastrctureという
+　　　
+
+　　※プロビジョニングツール
+　　　・OS起動自動化ツール…Kickstart、Vagrantなど
+　　　・OSやミドルウェアの設定を自動化するツール…Chef、Ansibleなど
+　　　・複数サーバの自動化を自動化するツール…Serf(障害発生したサーバを取り除いたりできる。)、Capistrane(複数サーバへのアプリのデプロイを実現)、
+　　　
+
+・Docker
+　イメージ作成機能
+　　アプリ実行に必要なプログラムソース本体、ライブラリ、ミドル、OSの設定をまとめて1つのイメージとする。
+　　1イメージ=1アプリ
+
+　Dockerコンテナの実行機能
+　　Linux上でコンテナ単位でアプリを実行する。コンテナの元になるものがイメージ。1イメージで複数のコンテナを起動も可能
+
+　Dcokerイメージ共有機能
+　　Docker Hubには各OSのイメージがおいてある。
+　　機密情報を取り扱う場合には、Docker Registryなどをセキュアな環境に構築する
+
+・Kubernetes
+　物理サーバにおけるクラスタリング
+　　コールドスタンバイ…構成設定が同一のサーバおよびNW環境を構築しておき、バックアップとして電源をとめておく
+　　　　　　　　　　　　
+　　ほっとスタンバイ…同一構成のイメージを２つ起動させておく。待機しているサーバが障害を起こしたサーバの処理を引き継ぐ
+　　　　　　　　　　　
+　ヘルスチェック
+　　正系のサーバの異常にいち早く気づくために、行う。レイヤの上昇に伴いサービス提供の確認が確実になるが負荷も上がる。
+　
+　コンテナにおけるクラスタリング
+　　コンテナが動作するサーバ(物理、仮想)を複数用意しておきそれぞれのサーバでコンテナを複数並列稼動する。
+　　あるサーバ上のコンテナが正常に動作しない場合に、他のサーバで該当のコンテナを起動しなおすことでフェイルオーバーを行う
+　
+　コンテナオーケストレーションツール
+　　マルチホストで構成された環境でクラスタ構成の実現及び、コンテナ操作、ホスト間のネットワークなど統合的に管理するツール
+　　・Docker Engin
+　　　Dockerのもつクラスタリング機能Swarmモードのこと。Dockerに組み込まれている
+　　・Apache Mesos / Marathon
+　　　オープンソースのツール。数百～数千のホストに対応。ホストのリソースを論理的に一つとみなして使用可能
+　　　別途、Marathonなどのコンテナ管理用のフレームワークがひつよう。
+　　・Kubernetes
+　　　Googleを中心んとしたコミニティで開発されている。他にもたくさんの企業。
+
+　基本構成
+　・Kubernetesのサーバ構成
+　　マスターサーバ…コンテナ管理を行う。kubectlコマンドを使ってのクラスタリングやリソースの操作。クラスタ内のノードのリソースを自動的に判断し、処理を割り当てる
+　　ノード…Dockerコンテナを動作させるサーバ
+　　バックエンドデータベース(etcd)…etcdというKey-Value Storeを使用してクラスタの構成情報をまとめて管理
+　　Dockerレジストリサーバ…Dockeイメージを管理する。
+
+　・ネットワーク構成
+　　全て同一のNWに所属していればOK。ただし、ノード間は別途内部ネットワークをトンねリングして上げる必要あり。
+　　使えるツールはFlannelなど。GKEの場合は独自の方式による内部ネットワークを構築できる。
+
+　・システムへのアクセス
+　　コンテナの起動などはマスターサーバへ指示。コンテナ内で起動しているサービスについては、外部ネットワークから
+　　適当な1つのノードに到達した後に、内部ネットワークを介してアクセス。SLBとコンテナの共存も可能
+
+　・コンテナオーケストレーション
+　　POD(ぽっど)
+　　　デフォルトではコンテナごとに別々の仮想NICとプライベートIPが割り振られるが、複数のコンテナで仮想NICを共有することが
+　　　可能。仮想NICを共有するコンテナ群をPodという。
+　　　DockerではPodごとにコンテナの作成、開始、停止などを行う。Pod内のコンテナは同一のホストに配備される。
+　　　Pod内ではフォルダを共有することも可能。
+　　　　例）アプリ稼動のサーバとログ収集のコンテナを一つのPodにまとめると、localhostでの通信や共有ディレクトリによる
+　　　　　　ログのやり取りができる。
+
+　　Replication Controller(レプリケーションコンとローラ)
+　　　同一構成のPodが師弟の数だけ起動している状態を作り出す。負荷分散のためにPodを量産するときなどに使う。
+　　　動的なPod数の変更が可能。コンテナ異常のときは自動で新しいPodを作り出す。
+　　　Pod単体での起動も可能だが、オートスケールなどが行えないため、レプリケーションコントローラを使用して起動する。
+
+　　Service(サービス)
+　　　Pod起動後に外部からアクセス可能なIPを割り振る必要がある。複数のPodに対してアクセス可能なIPアドレス＋ポート番号を
+　　　定義することで負荷分散が行われる。
+　　　サービス機能ではCluster IPとExternal IPがある。
+　　　　Cluster IP…Pos間のプライベートIP
+　　　　External IP…パブリックIP。GKEではCloud Load Balancingで用意したIPを使用可能。その場合はSLBによる負荷分散となる。
+　　　新規にPodを起動すると既存のServiceのIPアドレスとポート番号は環境変数として参照可能になる。
+　　　GKEの環境ではクラスタ内部のDNSにりょうサービス名での名前解決も可能
+
+
+・GCP(Google Container Engine)
+　プライベートなCountainer Registryの提供
+　クイックなロギング
+　Countainerの振るマネージドサービス
+
+・Google Contaicer Registry
+　DockerイメージをGCPのプロジェクト内で管理できるレジストリーサービス
+　①Dockerコマンドを使ったアクセス
+　　Docker Registry V2 APIを使用したレジストリへのDockerイメージのアップローd(push)と
+　　ダウンロード(pull)が可能
+　　イメージへのアクセスにはDockerコマンドがそのまま使える。
+
+　②Dockerイメージの効率的な保存
+　　Cloud Storageバケットの中からCompute Engineインスタンスに地理的に近いものを指定する
+　　⇒ダウンロードにかかる時間を短縮できる。
+
+　③Cloud consoleでのイメージ管理
+　　Cloud ConsoleからDockerイメージを名前とタグで検索可能。タグの追加と削除も可能
+
+
+・Google Cloud Datastore
+　複数のサーバにデータを分散して保持することで、大量のデータの保存に対応した
+　NoSQLデータベースサービス。NoSQLではテーブルの構造を後から変更可能。
+
+　①フルマネジ
+　　複数サーバを用いた分散環境でのデータ保持(シャーディング)やデータセンター間での
+　　レプリケーションは自動で実施される。エンティティグループによるトランザクション機能が提供
+
+　②機能
+　　Cloud ConsoleのGUIを用いてエンティティの統計やインデックスの確認、データのバックアップ処理が実行可能。
+　　ORM(Object Relational Mapping)の機能を提供するクライアントライブラリも用意。
+
+　③様々なデータ型のサポート
+
+
+・GCP使用のコンテナ実行環境のアーキテクチャ
+　①固有のシステム要件がある場合
+　　Dockerの実行環境を詳細にカスタマイズしたいときは、GCEを使って自前のインフラを構築可能。
+　　GCeでLinuxが動作する、インスタンスを構築し、そこにDockerをインストールさせて起動。
+　　コンテナオーケストレーションもKubernetesやDocker Swarmを使用し、自前でシステム要件に応じた
+　　環境構築が可能。
+　　ただ、Dockerの知識に加えてオートスケールや不可分さん冗長化監視障害対応など知識が必要
+　
+　②Docerコンテナの実行環境を効率的に構築/運用したい場合
+　　GKEを使用してDocker環境を構築。クラスタリング、監視などの手間が省ける。
+　　GUIの操作のみでクラスタリング環境が構築可能。複雑な用件がある場合は無理。
+　　一般的なDocker環境と同一なので、アプリケーションの可搬性を担保可能
+
+　③短期間で新規システムを開発し、運用にコストを掛けないパターン
+　　PaasサービスのGoogle App Engineは内部的にコンテナを使用している。
+　　運用を意識しないでいいため、高速でのアプリ開発に向く。
+　　デメリットとしてはDockerイメージを使用せず、固有の設定やライブラリが必要
+　　⇒他の環境にアプリケーションをいこうすることが難しい。
+
+・オンラインゲームのコンテナ実行環境構築
+　①要件定義
+　　スケーラビリティ…リクエスト増減⇒動的なコンテナ数の変更
+　　機能単位のアプデ…すばやいフィードバックの適用のために、機能単位での理ファクタリングや部分
+　　　　　　　　　　　アプデ。マイクロサービス化　
+　　ゲームの状態を永続保存する機能…状態保存の仕組み、スコアやランキングの仕組み
+
+　上記から考えられるインフラの設計
+　　クライアント⇒Cloud Load Balancing　⇒　Container Engine　⇒　Cloud Datastore
+　・APIサーバ機能
+　　ゲームの進行を管理するフロントエンドとCPの思考ルーチン(AI)を提供するバックエンドを分離して
+　　Podを構築する。
+　
+　・ゲームの状態を保存する、データストア
+　　分散データストアCloud Datastoreに保存する。
+
+　・サービス無停止でのアプデ
+　　Kubernetesのローリングアプデ機能を利用。段階的にコンテナを入れ替えていく
+　　ユーザがゲームをプレイしている最中にバックエンドのアップデートを実施
+
+　・機能のお話し
+　　1.ランダム対戦機能(v1.0)
+　　　五目並べゲームを早期にリリースするためランダムな手を打つ対戦機能をリリース。
+　　　最小限の機能のリリース
+
+　　2.Ai対戦機能(v1.1)
+　　　CPの思考をアプデ。
+
+・GKEによるコンテナクラスタ構築
+　3つの仮想マシンインスタンスからなるクラスタを構築
+　コンピューティング⇒Container Engine⇒コンテナクラスタ⇒クラスタを作成
+　パラメータの詳細は割愛
+　※構築に5分以上はかかる模様なのでのんびりコーヒーでも飲みながらまつ。
+
+　クラスタの操作はKubernetesの提供するkubectlコマンドを使用できる。
+　GKEではCloud Shellから上記コマンドが使用可能
+
+　準備を実施
+　Cloud Shellから下記コマンドを実施、Cloud Datastoreを利用するリージョンを決定する。
+　　gcloud app create --region=asia-northeast1
+　kubectlコマンドを使用するための設定ファイルの取得
+　　gcloud container clusters get-credentials gobang-cluster --zone=asia-east1-c
+　上記コマンドで～/.kube/configができる。これによりkubectlコマンドを使用できる。
+　　kubectl get nodes
+　
+・ランダム対戦機能のイメージ作成
+　Dockerflieの準備
+　　Git上で更改されているソースをダウンロード。
+　　git clone https://github.com/asashiho/gke-gobang-app-example
+　　cd gke-gobang-app-example
+
+
+　Dockerfileはgke-gobang-app-example/frontend/Dlckerfileにある。
+　①ベースイメージの指定
+　　既存のイメージをスタートとして、必要なファイルを追加していく。
+*************Dockerfile***************************
+FROM debian:9.4     ←ベースイメージFROM or FROM:タグ名 でタグでバージョンを指定できる
+LABEL maintainer "Etsuji Nakai <enakai@google.com>"  ←作成者の情報
+ENV REFRESHED_AT 2017/02/28       ←環境変数 ENV キー名 値 or ENV=キー名
+
+RUN apt-get -qq update; \         ←実行したいコマンド RUN 実行したいコマンド
+    apt-get -qq -y upgrade; \     ←\バクスラで改行
+    apt-get -qq -y install \
+        curl python python-dev python-pip \
+        python-flask python-requests; \
+    pip install --upgrade setuptools; \
+    pip install --upgrade gcloud
+
+ADD src /opt/gobang/bin           
+EXPOSE 8080
+CMD ["/opt/gobang/bin/frontend.py"]
+　
+**************************************************
+ADD ホストのファイルパス Dockerイメージのファイルパス
+上記はホスト上のファイルをDockerイメージに追加する
+
+
 
 
 
