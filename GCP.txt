@@ -1,0 +1,70 @@
+・主な機械学習APIサービス
+　Cloud Vision API
+　　https://cloud.google.com/vision/
+　Cloud Translation API
+　　https://cloud.google.com/translate/
+　Cloud Speech API
+　　https://cloud.google.com/speech/
+　Cloud Natural Language API
+　　https://cloud.google.com/natural-language
+　Cloud Machine Learning Engine
+　　https://cloud.google.com/ml
+
+　上記の各ページでお試し利用ができる！！
+
+
+・APIサービスの利用方法
+　APIサービスはRESTリクエストを受け付ける。
+　ブラウザ上のJavascriputからRESTリクエストを送信してAPIサービスを使用するようなことも可能
+　
+　他にも、APIサービスを呼び出すためのクライアントライブラリも用意されており、ライブラリ
+　煮対応した言語であればライブラリ関数を使用してAPIサービスを使用することもできる。
+　
+
+例）Python用のgooogle-cloudライブラリを使用して、画像のラベルの付け替え
+from google.cloud import vision
+
+vision_client = vision.Client()
+image = vision_client.image(source_uri = 'gs:/mybucket/file01.png')
+labels = image.detect_labels(limit=5)
+for label inlabels:
+   print (label.description, label.score)
+
+例）Python用のgooogle-cloudライブラリを使用して、テキスト分を日本語に翻訳
+from google.cloud import translate
+
+translate_client = translate.Client()
+result = translate_client.translate(text, target_language='ja')
+print result['translatedText']
+
+
+　上記の記載だけで翻訳が可能なんて素敵。
+　上記のAPIサービスを使用するためには認証が必要。
+　認証コード(APIキー)は設定が別途必要となるが、GAE環境であれば、このような認証処理は自動化
+　されている。
+
+・JavaScriptからAPIを呼び出す。
+　①Cloud Vision APIの有効化
+　　APIマネージャー→Cloud Vision APIを有効化
+　②APIキーの取得
+　　APIマネージャーの認証情報を開いて、「証明書を作成」→APIキー
+　　APIキーの文字列が表示されるので保存しておく
+　③サンプルコードのダウンロード
+　　https://github.com/asashino/web-docs-samples
+　④APIキーの設定とサンプルコードの実行
+　　ダウンロードファイルを展開後vision→explore-apiの中のkey.js.exampleというファイルを
+　　keys.jsという名前でコピーする。
+　　先ほど取得したAPIキーをYOUR API KEY HEREという箇所に置換する。
+　
+　　Index.htmlを開くと画像解析が実施できる。
+　　返ってきている返り値を見てみよう！
+
+・GAEの概要
+　
+
+
+
+
+
+
+
