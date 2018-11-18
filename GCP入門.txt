@@ -380,6 +380,12 @@ WindowsからLinuxまで広い範囲のOSが提供されていそう
 　　　新規にPodを起動すると既存のServiceのIPアドレスとポート番号は環境変数として参照可能になる。
 　　　GKEの環境ではクラスタ内部のDNSにりょうサービス名での名前解決も可能
 
+　　Deployments
+　　　複数のPodを集めた構成を作成する単位。ReplicaSetを管理する。
+　　
+　　ReplicaSet
+     複数のPodを組み合わせてアプリケーションｎ機能を実現したもの。アップデートの際に新規のReplicaSetを作成してアプデする
+
 
 ・GCP(Google Container Engine)
 　プライベートなCountainer Registryの提供
@@ -503,14 +509,239 @@ RUN apt-get -qq update; \         ←実行したいコマンド RUN 実行したいコマンド
     pip install --upgrade setuptools; \
     pip install --upgrade gcloud
 
-ADD src /opt/gobang/bin           
-EXPOSE 8080
+ADD src /opt/gobang/bin            ←ゲームアプリケーションの配置
+EXPOSE 8080　
 CMD ["/opt/gobang/bin/frontend.py"]
 　
 **************************************************
 ADD ホストのファイルパス Dockerイメージのファイルパス
 上記はホスト上のファイルをDockerイメージに追加する
 
+Expose ポート番号 
+実行中のコンテナがListenしているネットワークポートをコンテナの実行エンジンに知らせる
+アプリケーションが使用するポートを知らせている。
+
+CMD　実行したいコマンド
+上記の通り
+
+・Dockerfileの命令
+　From　ベースイメージの指定
+　RUN　コマンドの実行
+　CMD　コンテナ実行のコマンド
+　LABEL　ラベルを設定
+　EXPOSE　ポートのエクスポート
+　ENV　環境変数
+　ADD　ファイル/ディレクトリの追加
+　COPY　ファイルのコピー
+　VOKUME　ボリュームのマウント
+　ENTRYPOINT　コンテナの実行コマンド
+　USER　ユーザの指定
+　WORKDIR　作業ディレクトリ
+　ONBUILD　ビルド完了後に実行される命令
+　STOPSIGNAL　コンテナ終了時に送信するシグナル
+
+・Docerのイメージ作成
+　Hockerfileをもとにしてイメージを作る
+　イメージの実態はファイルツリー構造
+　　docker build -t [生成するイメージ名]:[タグ名] [Dockerfileのファイルパス]
+  コマンド例　
+　　docker build -t frontend:v1.0 frontend/
+  このコマンドを実行することで一行づつ（1stepづつ）構築している。
+　　docker build -t backend:v1.0 backend-dummy/
+　上記の実行の際はフロントエンドの作成を実行した際の中間イメージがキャッシュとして再利用されるため
+　短時間で完了する。
+  実行履歴
+  gototeruya@cloudshell:~/gke-gobang-app-example (gke-gobang-app-example-222101)$ docker images
+  REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+  backend             v1.0                420c96a55381        36 seconds ago      581MB
+  frontend            v1.0                8ea25b7d006b        8 minutes ago       581MB
+  debian              9.4                 9a5d7185d3a6        4 months ago        101MB
+　
+　ビルドしたDockerイメージとFromとして指定されたdebianのイメージが作成されている。
+
+・ローカルでの動作確認
+　デプロイする前にローカルでイメージの正しさを確認する。
+　　export PROJECT_ID="gke-gobang-app-example-222101"
+　以下のコマンドでコンテナを起動する。
+　　docker network create my-network
+　　docker run -d --name backend --network my-network -e PROJECT_ID=$PROJECT_ID backend:v1.0
+　　
+　続いてフロントエンドのアプリコンテナを起動
+　　docker run -d --name frontend --network my-network -p 8080:8080 -e PROJECT_ID=$PROJECT_ID frontend:v1.0
+
+   API_URL=http://localhost:8080/api/v1 client/client.py
+
+
+・Dockerイメージの公開
+　作成したイメージをContainer Rgistryにアップロードして公開する
+　下記コマンドでイメージへの別名タグを設定する
+　　docker tag frontend:v1.0 gcr.io/$PROJECT_ID/frontend:v1.0
+   docker tag backend:v1.0 gcr.io/$PROJECT_ID/backend:v1.0
+
+　dockerイメージの別名を確認
+　　docker images
+　クラウドレジストリへのイメージのアップロードはCloud Shellを起動したときのアカウントの権限でアクセスする
+　　gcloud docker -- push gcr.io/$PROJECT_ID/frontend:v1.0
+　　gcloud docker -- push gcr.io/$PROJECT_ID/backend:v1.0
+
+　登録されたイメージはコンテナストレージからみれる
+
+・対戦機能のデプロイ
+　Deploymentの設定ファイルを使用する。ファイルの位置は以下　
+　　gke-gobang-app-example/config/backend-deployment.yaml
+　上記ファイルの中身を修正
+**********************************
+at config/backend-deployment.yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: backend-node
+  name: backend-node
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: backend-node
+    spec:
+      containers:
+      - image: gcr.io/gke-gobang-app-example-222101/backend:v1.0
+        name: backend-node
+        ports:
+        - containerPort: 8081
+
+　下記コマンドを実行することで設定に従ってコンテナのデプロイが行われる。
+　　kubectl create -f config/backend-deployment.yaml
+
+　コンテナの確認を実施
+　　kubectl get pods
+
+  $ vi config/backend-service.yaml
+  $ kubectl create -f config/backend-service.yaml
+    service "backend-service" created
+  $ kubectl get service
+　　NAME              TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+　　backend-service   ClusterIP   10.31.249.65   <none>        8081/TCP   14s
+　　kubernetes        ClusterIP   10.31.240.1    <none>        443/TCP    1d
+
+　上記一連の作業でサービス定義ファイルをもとにサービスの定義を行い、サービスを確認する。
+　CLUSTER-IP はバックエンドサービスを提供するコンテナにアクセスするための代表IPアドレスです。
+　このIPにアクセスすると自動的に複数のバックエンドコンテナへの負荷分散がおこなわれる。
+　コンテナクラスタ内部には専用のDNSサービスがある。
+　backend-service.default.svc.cluster.localにアクセスするこで先程の代表IPアドレスへのアクセスが行われる
+
+　フロントエンドのデプロイが完了したら下記のEXTERNAL　IPにアクセスする
+　gototeruya@cloudshell:~/gke-gobang-app-example (gke-gobang-app-example-222101)$ kubectl get service
+　NAME               TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE
+　backend-service    ClusterIP      10.31.249.65   <none>          8081/TCP       10m
+　frontend-service   LoadBalancer   10.31.249.84   35.221.235.39   80:32604/TCP   2m
+　kubernetes         ClusterIP      10.31.240.1    <none>          443/TCP        1d
+
+　下記で新しいバージョンのアプリをリポジトリに登録
+　gcloud docker -- push gcr.io/$PROJECT_ID/backend:v1.1
+　下記でVIMが開く。デプロイメントの構成情報を修正
+  kubectl edit deployment/backend-node
+　
+　徐々にデプロイが進んでいく
+　kubectl describe deployment/backend-node
+
+　  
+
+・機械学習を用いたGAEアプリケーション
+　写真アルバムサービスアプリをGoogle App Engineで展開していく
+
+・ディープラーニング
+　人工知能とはまるでサービスが知能をもっているような振る舞いをもののこと
+　ディープラーニングはこの振る舞いを実現するために必要な技術。→高い予知性が重要とされている。
+　ディープラーニングとは機械学習の一部。
+　ディープラーニングではすでに学習済みのニューラルネットワークを利用する方法と
+　独自のデータを用意して自身でモデルの学習処理を行う方法がある。
+
+　GCPが提供するサービスでは学習済みのモデルを用いて提供されるAPIサービスと利用者自身が独自モデルの学習処理を
+　実施できるサービス（Cloud Machine Learning Engine）がある。
+
+・GCPの機械学習サービス
+・主な機械学習APIサービス
+　Cloud Vision API
+　　https://cloud.google.com/vision/
+　Cloud Translation API
+　　https://cloud.google.com/translate/
+　Cloud Speech API
+　　https://cloud.google.com/speech/
+　Cloud Natural Language API
+　　https://cloud.google.com/natural-language
+　Cloud Machine Learning Engine
+　　https://cloud.google.com/ml
+
+　上記の各ページでお試し利用ができる！！
+
+
+・APIサービスの利用方法
+　APIサービスはRESTリクエストを受け付ける。
+　ブラウザ上のJavascriputからRESTリクエストを送信してAPIサービスを使用するようなことも可能
+　
+　他にも、APIサービスを呼び出すためのクライアントライブラリも用意されており、ライブラリ
+　煮対応した言語であればライブラリ関数を使用してAPIサービスを使用することもできる。
+　
+
+例）Python用のgooogle-cloudライブラリを使用して、画像のラベルの付け替え
+from google.cloud import vision
+
+vision_client = vision.Client()
+image = vision_client.image(source_uri = 'gs:/mybucket/file01.png')
+labels = image.detect_labels(limit=5)
+for label inlabels:
+   print (label.description, label.score)
+
+例）Python用のgooogle-cloudライブラリを使用して、テキスト分を日本語に翻訳
+from google.cloud import translate
+
+translate_client = translate.Client()
+result = translate_client.translate(text, target_language='ja')
+print result['translatedText']
+
+
+　上記の記載だけで翻訳が可能なんて素敵。
+　上記のAPIサービスを使用するためには認証が必要。
+　認証コード(APIキー)は設定が別途必要となるが、GAE環境であれば、このような認証処理は自動化
+　されている。
+
+・JavaScriptからAPIを呼び出す。
+　①Cloud Vision APIの有効化
+　　APIマネージャー→Cloud Vision APIを有効化
+　②APIキーの取得
+　　APIマネージャーの認証情報を開いて、「証明書を作成」→APIキー
+　　APIキーの文字列が表示されるので保存しておく
+　③サンプルコードのダウンロード
+　　https://github.com/asashino/web-docs-samples
+　④APIキーの設定とサンプルコードの実行
+　　ダウンロードファイルを展開後vision→explore-apiの中のkey.js.exampleというファイルを
+　　keys.jsという名前でコピーする。
+　　先ほど取得したAPIキーをYOUR API KEY HEREという箇所に置換する。
+　
+　　Index.htmlを開くと画像解析が実施できる。
+　　返ってきている返り値を見てみよう！
+
+・GAEの概要
+ GAEではロードバランサやDNSの設定はすべて行う必要がない。アクセス負荷に応じて自動亭にkンテなの数を増減する
+　オートスケール機能がある。GAEでは個々のコンテナのことをインスタンスと読んでいる。
+　それぞれのコンテナ上にデータを永続的に保存することはできないので、保存データはCloudDatastoreやCloudStorageなど
+　外部のデータストアに保存する。データベースが必要な場合はCloudSQLを使用できる。
+　GAEの標準サービスとなるStandard　Environmentでは、java,Python,PHP,GOなどの言語を使用できる。
+　Pythonであれば、DjangoやFlaskなどの標準的なWebアプリケーションフレームワークを使用することができる。
+　
+・Cloud Datastoreの概要
+　　
+
+
+
+
+
+
+
+
+　
 
 
 
