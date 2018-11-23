@@ -732,8 +732,166 @@ print result['translatedText']
 @Python‚Å‚ ‚ê‚ÎADjango‚âFlask‚È‚Ç‚Ì•W€“I‚ÈWebƒAƒvƒŠƒP[ƒVƒ‡ƒ“ƒtƒŒ[ƒ€ƒ[ƒN‚ðŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚éB
 @
 ECloud Datastore‚ÌŠT—v
+
+
+
+
+
+EGAE‚ð—p‚¢‚½ƒT[ƒrƒX‚ÌƒfƒvƒƒC
+@ƒTƒ“ƒvƒ‹ƒAƒvƒŠ‚Ìƒ_ƒEƒ“ƒ[ƒh
+@@git clone https://github.com/asashino/appengine-photoalbum-example
+   
+  API‚Ì—LŒø‰»
+@@Cloud Vision API
+   Cloud Transration API
+
+  GAE‚ÅŽÀs‚·‚éƒAƒvƒŠ‚Ì\¬î•ñ‚Íapp.yaml‚É‹LÚ‚·‚é
+****************************************
+runtime: python27
+api_version: 1    /Žg—p‚·‚éAPI‚Ìƒo[ƒWƒ‡ƒ“
+threadsafe: true
+
+handlers:
+- url: /
+  script: main.app
+- url: /.*
+  script: main.app
+  login: required
+
+env_variables:
+  LANG_TAG: 'ja'
+  TIMESTAMP_TZ: 'Asia/Tokyo'@@
+****************************************
+
+ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Ìì¬
+ã‹L‚ðcloud shellã‚ÅŽÀs
+GAE‚ÌƒAƒvƒŠƒP[ƒVƒ‡ƒ“ŠÂ‹«‚ðcloud shellã‚Éì¬‚·‚éB
+ gcloud app create
+
+Cloud Database‚ÌƒCƒ“ƒfƒbƒNƒXì¬
+ index.yamlŒ`Ž®‚Ìƒtƒ@ƒCƒ‹‚ÉƒCƒ“ƒfƒbƒNƒX‚ð‹LÚ‚·‚éB
+
+  gcloud datastore indexes create index.yaml
+@¨ƒf[ƒ^ŒŸõ—p‚ÌƒCƒ“ƒfƒbƒNƒX‚ªì¬‚³‚ê‚é
+ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Ìƒfƒvƒgcloud app deploy
+
+
+“®ìŠm”F
+@https://ƒvƒƒWƒFƒNƒg–¼.appspot.com
+
+E‹@ŠBŠwKƒ‚ƒfƒ‹‚ÌŽÀŒ»
+@Ž©g‚Åì¬‚µ‚½AŠwKÏ‚Ý‚à‚Å‚é‚ÌAPI‚ð\’z‚Å‚«‚éB
+@
+@‚â‚é‚±‚ÆI
+@…@Cloud MLEAPI‚Ì—LŒø‰»
+@@APIƒT[ƒrƒX¨Cloud Machine Learning Engine‚Ì—LŒø‰»
+
+@@Cloud MLE‚ðŽg—p‚·‚éƒƒŠƒbƒg
+@@@ŠwKˆ—‚ÌŠÔ‚Ì‚ÝŒvŽZƒm[ƒh‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ä‰Û‹à‘ÎÛ‚Æ‚È‚é
+@@@•ªŽUŠwK‚É‘Î‰ž‚µ‚½ƒR[ƒh‚ð—p‚¢‚é‚ÆA•ªŽUŠwK‚ª‚©‚Ì‚¤
+@@@ƒIƒvƒVƒ‡ƒ“Ý’è‚ÅAGPU‚Ì—˜—p‚à‰Â”\
+
+@@ô‚Ýž‚Ýƒjƒ…[ƒgƒ‰ƒ‹ƒlƒbƒgƒ[ƒN‚É‚æ‚éŠwK‚Æ‚Í‰½‘w‚à‚Ì‰æ‘œƒtƒBƒ‹ƒ^‚ð“K—p‚µ
+@@ÅŒã‚É‚»‚Ì‰æ‘œ‚ÌŽí—Þ‚ðŽ¦‚·ƒ‰ƒxƒ‹’l‚ðŽ¦‚·AŠÖ”‚Ì‚±‚Æ
+@@
+@@‚±‚ÌŠÖ”‚ªAÅ“K‚È”Žš‚ð“±‚«o‚·‚æ‚¤‚¢ŠeŽíƒpƒ‰ƒ[ƒ^‚ð’²®‚µ‚Ä‚¢‚­‚±‚Æ‚ð
+@@ŠwK‚Æ‚æ‚ñ‚Å‚¢‚éB
+
+@@ƒpƒ‰ƒ[ƒ^ƒ`ƒ…[ƒjƒ“ƒO‚ÌƒAƒ‹ƒSƒŠƒYƒ€‚ÍTensorFlow‚É‚à‚Æ‚æ‚è‘g‚Ýž‚Ü‚ê‚Ä‚¢‚éB
+@@Šî–{“I‚É‚Í—\‘ªˆ—‚ðs‚¤ŠÖ”‚ð‹Lq‚·‚ê‚Î‚æ‚¢
+@@
 @@
 
+
+@…ACompute@Engine@‚ÌAPI‚Ì—LŒø‰»
+@@APIƒT[ƒrƒX¨Cloud Compute Engine‚Ì—LŒø‰»
+
+@…BCloud@Shell@‚Å‚Ìƒ‚ƒfƒ‹ŠwK‚ÉŽg—p‚·‚éƒR[ƒh‚Ìƒ_ƒEƒ“ƒ[ƒh
+   Cloud Shellã‚É‚Ä@
+   git clone https://github.com/asashiho/cloudml-dist-mnist-example
+   
+   task.py         ¨ƒ‚ƒfƒ‹‚ÌŠwKˆ—
+   mnist_model.py@@¨ôž‚Ýƒjƒ…[ƒgƒ‰ƒ‹ƒlƒbƒgƒ[ƒN‚ð‹Lq‚µ‚½ƒ‚ƒfƒ‹
+   meist.py@@@@@¨ŠwKƒf[ƒ^‚Ìˆ—‚ðs‚¤
+
+@…CCloud@Strageã‚ÉƒoƒPƒbƒg‚ðì¬
+   PROJECT_ID=$(gcloud config list project --format "value(core.project)")
+   TRAIN_BUCKET="gs://${PROJECT_ID}-ml"
+   gsutil mkdir $TRAIN_BUCKET
+
+   Cloud MLE‚ÉH‚í‚¹‚éƒf[ƒ^‚ÍƒCƒ“ƒ^[ƒlƒbƒgã‚©‚çˆø‚Á’£‚Á‚Ä‚­‚é•û–@‚Æ
+@@“ÆŽ©‚ÌŠwKƒf[ƒ^‚ðŽg—p‚·‚é•û–@‚ª‚ ‚éB
+@@ŒãŽÒ‚Ìê‡Aˆê“xCloud Storage‚É•Û‘¶‚µ‚Ä‚¨‚­•K—v‚ª‚ ‚éB
+
+@…DŠwKƒWƒ‡ƒu‚Ì“Š“ü
+@@ŠÂ‹«•Ï”JOB_ID‚Éƒ†ƒj[ƒN‚ÈƒWƒ‡ƒuID‚ðÝ’è‚µ‚ÄƒWƒ‡ƒu‚ð“Š“ü‚·‚éB
+@@JOB_ID="${USER}_$(date +%Y%m%d_%H%M%S)"
+   gcloud ml-engine jobs submit training ${JOB_ID} --package-path trainer --module-name trainer.task --staging-bucket "${TRAIN_BUCKET}" --region us-central1 --config config/config.yaml -- --log_dir ${TRAIN_BUCKET}/${JOB_ID}/train --model_dir ${TRAIN_BUCKET}/${JOB_ID}/model --max-steps 10000
+ 
+   ƒWƒ‡ƒu‚ª³í‚É“Š“ü‚³‚ê‚é‚Æ“o˜^‚³‚ê‚½ƒWƒ‡ƒuID‚É‰Á‚¦‚ÄAstateFQUEUED‚Æ‚¢‚¤•¶Œ¾‚ªo‚éB
+@@Cloud Console‚Ìƒƒjƒ…[‚©‚çAML Engine¨ƒWƒ‡ƒu‚ð‘I‚Ô‚ÆƒWƒ‡ƒuˆê——‚ªŠm”F‚Å‚«‚éB
+
+@…ETensorBoard‚É‚è‚å‚¤ŠwKˆ—‚É”º‚¤A³‰ð—¦‚Ì•Ï‰»‚È‚Ç‚ÌŠm”F
+@@ƒWƒ‡ƒuŽÀsŽž‚É‚ÍCloud Strageã‚ÉŠwK‚ÌŒo‰ß‚ð‹L˜^‚µ‚½ƒoƒCƒiƒŠƒtƒ@ƒCƒ‹‚ª‚Å‚«‚éB
+@@ã‹L‚ÍTensorBoard‚Å‰ÂŽ‹‰»‚Å‚«‚éB
+@@tensorboard --port 8080 --logdir ${TRAIN_BUCKET}/${JOB_ID}/train
+   
+   ã‹L‚ÌŽÀsŒã‚ÉACloud Shell‚Ìƒ|[ƒgã‚Å‚ÌƒvƒŒƒrƒ…[‚ð‘I‘ð‚·‚é‚±‚Æ‚Å³‰ð—¦‚Ìã¸‚ÌŽp‚ª‚Ý‚ê‚éB
+
+@…FŠwKÏ‚Ýƒ‚ƒfƒ‹‚ðAPI‚Æ‚µ‚ÄŒöŠJ‚·‚é
+   MODEL_NAME=MNIST
+   gcloud ml-engine models create --regions us-central1 ${MODEL_NAME}
+   VERSION_NAME=v1
+   gcloud ml-engine versions create --origin $TRAIN_BUCKET/${JOB_ID}/model --model ${MODEL_NAME} ${VERSION_NAME}
+   gcloud ml-engine versions set-default --model ${MODEL_NAME} ${VERSION_NAME}
+
+  @¨‚±‚±‚Å‚Í--originƒIƒvƒVƒ‡ƒ“‚ÅCloud Strageã‚Ìæ’öì¬‚µ‚½ŠwKÏ‚Ý‚Ìƒ‚ƒfƒ‹‚ª•Û‘¶‚³‚ê‚½ƒfƒBƒŒƒNƒgƒŠƒpƒX‚ðŽw’è‚µ‚Ä‚¢‚éB
+@@ŠÂ‹«•Ï”MODEL_NAME‚ÆVERSION_NAME‚ÍAPIƒT[ƒrƒX‚É‚Â‚¯‚é”CˆÓ‚Ìƒ‚ƒfƒ‹–¼‚Æƒo[ƒWƒ‡ƒ“–¼‚ðŽw’è‚µ‚Ä‚¢‚éB
+@@
+@…GAPI‚ð—˜—p‚·‚éƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Ì€”õ
+@@GCE‚Ì‰¼‘zƒ}ƒVƒ“‚ð—p‚¢‚½ACloud Datalab‚ÅŽÀs‰Â”\‚ÈƒTƒ“ƒvƒ‹ƒm[ƒgƒuƒbƒN‚ª—pˆÓ‚³‚ê‚Ä‚¢‚é‚Ì‚Å‚±‚ê‚ð—p‚¢‚éB
+@@@¦Cloud Datalab‚Æ‚ÍcGCPã‚Å’ñ‹Ÿ‚³‚ê‚Ä‚¢‚éƒf[ƒ^‰ðÍA‰ÂŽ‹‰»ƒc[ƒ‹‚Å‚·Bƒ†[ƒU[‚Í Cloud Datalab ‚Ì“®ì‚·‚é Docker ƒCƒ[ƒW‚ðƒ[ƒJƒ‹A‚à‚µ‚­‚Í Google Compute Engine ã‚Å“®ì‚³‚¹Ate Engine ã‚Å“®ì‚³‚¹A 
+      Google BigQuery ‚â Google Cloud Storage ã‚Ìƒf[ƒ^‚ð‰ðÍ‚·‚é‚±‚Æ‚ª‰Â”\‚Å‚·B
+      
+   datalab create mydatalab --zone us-central1-a
+
+
+@…HƒAƒvƒŠƒP[ƒVƒ‡ƒ“Žg—p‚µ‚½“®ìŠm”F@
+   ã‹LƒRƒ}ƒ“ƒhŽÀsŒã‚É8081ƒ|[ƒg‚ðŽw’è‚µ‚ÄCloud Shellã‚©‚çŠm”F‚·‚éB
+@@V‹Kƒm[ƒgƒuƒbƒN‚ªŠJ‚­‚½‚ßA‰º‹LƒRƒ}ƒ“ƒh‚ðŽÀs‚µAƒTƒ“ƒvƒ‹ƒR[ƒh‚ðƒ_ƒEƒ“ƒ[ƒh‚·‚éB
+@@!git clone https://github.com/asashiho/cloudml-dist-mnist-example
+
+   ƒm[ƒgƒuƒbƒNˆê——‚Ì‰æ–Ê‚É–ß‚é‚Æcloudml-dist-mnist-example‚Æ‚¢‚¤ƒtƒHƒ‹ƒ_‚ª‚Å‚«‚Ä‚¢‚é‚Ì‚Å
+@@‚»‚Ì’†‚ÌnotebookƒtƒHƒ‹‚¾[“à‚ÌOnlinepredictionexample.ipynb‚ð‘I‘ð‚µAƒy[ƒW‰º•û‚É‚ ‚éƒLƒƒƒ“ƒoƒXã‚É
+@@ƒtƒŠ[ƒnƒ“ƒh‚Å”Žš‚ð‹LÚ‚·‚éB
+
+@@
+
+EIAM‚É‚Â‚¢‚Ä
+@GoogleƒAƒJƒEƒ“ƒg@Google@Cloud@Platform‚ðŽg—p‚·‚é‚½‚ß‚ÌƒAƒJƒEƒ“ƒg
+@ƒT[ƒrƒXƒAƒJƒEƒ“ƒg@ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚©‚ç‚ÌƒŠƒ\[ƒXƒAƒNƒZƒX‚ð§Œä‚·‚é‚½‚ß‚ÌƒAƒJƒEƒ“ƒg
+@@@@@@@@@@@GCP‚ÅƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ðŽÀs‚·‚é‚½‚ß‚É•K—v
+@GoogleƒOƒ‹[ƒv@@•¡”‚ÌƒAƒJƒEƒ“ƒg‚É‚Ü‚Æ‚ß‚ÄŒ ŒÀ•t—^‚ð‚µ‚½‚¢‚Æ‚«‚É•K—vBã‹L2‚Â‚ÌƒAƒJƒEƒ“ƒg‚ð“ü‚ê‚é‚±‚Æ‚ª‚Å‚«‚éB
+@G suiteƒhƒƒCƒ“@@1‚Â‚Ì‘gD“à‚Ì‚·‚×‚Ä‚Ìƒƒ“ƒo[‚ðŠÜ‚Þ‰¼‘z“I‚ÈƒOƒ‹[ƒvB
+@@@@@@@@@@@ŠÖ˜A•t‚¯‚ç‚ê‚½”CˆÓ‚ÌƒCƒ“ƒ^[ƒlƒbƒgƒhƒƒCƒ“‚É‚æ‚Á‚ÄAID‚ðŠÇ—‚·‚é
+
+@•¡”‚ÌŒ ŒÀ‚ð‚Ü‚Æ‚ß‚½‚à‚Ì‚ð–ðŠ„‚Æ‚¢‚¢AID‚É‘Î‚µ‚Ä–ðŠ„‚ðŠ„‚è“–‚Ä‚é‚±‚Æ‚É‚æ‚èŒ ŒÀ‚ð•t—^‚·‚éB
+
+EƒT[ƒrƒXƒAƒJƒEƒ“ƒg‚Ìì¬
+@@ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚©‚çGCP‚ÌƒŠƒ\[ƒX‚ÉƒAƒNƒZƒX‚·‚éÛ‚ÉƒT[ƒrƒXƒAƒJƒEƒ“ƒg‚É‚æ‚é”FØˆ—‚ª•K—v‚Æ‚È‚éB
+@@GCPƒvƒƒWƒFƒNƒg‚ðì¬‚·‚é‚ÆAGCEƒT[ƒrƒXƒAƒJƒEƒ“ƒg‚ÆApp EngineƒAƒJƒEƒ“ƒg‚ªŽ©“®“I‚Éì¬‚³‚ê‚é‚ªA@
+@@‚±‚ê‚É‚æ‚èAGKE,GAE,GCE‚Ì‚»‚ê‚¼‚ê‚ÌŠÂ‹«‚Å‰Â“®‚·‚éƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚©‚çŠeŽíƒŠƒ\[ƒX‚Ö‚ÌƒAƒNƒZƒX‚ª‰Â”\‚É‚È‚éB
+@@ƒIƒ“ƒvƒŒ‚ÌƒT[ƒo‚â‚»‚Ì‘¼‚ÌƒT[ƒo‚©‚çGCP‚ÌƒŠƒ\[ƒX‚ÉƒAƒNƒZƒX‚·‚éê‡‚É‚ÍA‚»‚ê‚¼‚ê‚Ìê—pƒAƒJƒEƒ“ƒg‚ðì‚é•K—v‚ª‚ ‚éB
+@@
+@@IAM‚ÆŠÇ—¨ƒT[ƒrƒXƒAƒJƒEƒ“ƒgì¬¨–ðŠ„‚Ì‘I‘ð
+@@
+@@ŠO•”‚ÌƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚©‚çƒT[ƒrƒXƒAƒJƒEƒ“ƒg‚ðŽg—p‚·‚éÛ‚É‚ÍAƒT[ƒrƒXƒAƒJƒEƒ“ƒgƒL[‚É‚æ‚é”FØ‚ª
+@@•K—v‚Æ‚È‚éB‚±‚±‚ÅAuV‚µ‚¢”é–§Œ®‚Ì’ñ‹Ÿv‚Éƒ`ƒFƒbƒN‚ð‚¢‚ê‚é‚Æ
+@@ƒAƒNƒZƒX—p‚Ì”é–§Œ®‚ªƒ_ƒEƒ“ƒ[ƒh‚³‚ê‚éB
+@@ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚©‚ç”FØ‚·‚éÛ‚ÉA‚±‚Ì”é–§Œ®‚ðŽw’è‚µ‚Ä—˜—p‚·‚é
+
+@
+@
 
 
 
